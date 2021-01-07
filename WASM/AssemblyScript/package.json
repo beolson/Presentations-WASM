@@ -5,12 +5,14 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "asc hello-world.ts -b hello-world.wasm"
+    "build": "asc wasm/index.ts -b client/index.wasm",
+    "serve": "http-server client"
   },
   "author": "Brian Olson",
   "license": "ISC",
   "dependencies": {
-    "@assemblyscript/loader": "^0.17.13"
+    "@assemblyscript/loader": "^0.17.13",
+    "http-server": "^0.12.3"
   },
   "devDependencies": {
     "assemblyscript": "^0.17.13"
