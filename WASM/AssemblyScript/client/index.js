@@ -15,41 +15,64 @@ const wasmBrowserInstantiate = async (wasmModuleUrl, importObject) => {
     );
     return WebAssembly.instantiate(wasmArrayBuffer, importObject);
   };
+
   response = await fetchAndInstantiateTask();
 
   return response;
 };
 
-var wasmModule = undefined;
-
-const calculateFib = (event) => {
+const calculateFib = async (event) => {
   event.preventDefault();
+
+  const wasmModule = await wasmBrowserInstantiate("./index.wasm");
+
   const input = document.querySelector("#fibonacci_input").value;
-  var result = wasmModule.instance.exports.fib(input);
+  const result = wasmModule.instance.exports.fib(input);
   document.querySelector("#fibonacci_output").innerText = `result = ${result}`;
 };
 
-const sayHello = (event) => {
+const sayHello = async (event) => {
   event.preventDefault();
+
+  const wasmArrayBuffer = await fetch("./index.wasm").then((response) =>
+    response.arrayBuffer()
+  );
+
+  const wasmModule = await loader.instantiate(wasmArrayBuffer);
+
+  const { __newString, __getString, __retain, __release } = wasmModule.exports;
+
   const input = document.querySelector("#hello_world_input").value;
-  var result = wasmModule.instance.exports.fib(input);
+
+  let inputPtr = __retain(__newString(input));
+
+  var resultPtr = wasmModule.instance.exports.sayHello(inputPtr);
+
+  let result = __getString(resultPtr);
+
+  __release(inputPtr);
+  __release(resultPtr);
+
   document.querySelector(
     "#hello_world_output"
   ).innerText = `result = ${result}`;
 };
 
+const myWorker = new Worker("worker.js");
+
+myWorker.onmessage = function (e) {
+  document.querySelector(
+    "#fibonacci_thread_output"
+  ).innerText = `result = ${e.data}`;
+};
+
 const calculateFibThread = (event) => {
   event.preventDefault();
   const input = document.querySelector("#fibonacci_thread_input").value;
-  var result = wasmModule.instance.exports.fib(input);
-  document.querySelector(
-    "#fibonacci_thread_output"
-  ).innerText = `result = ${result}`;
+  myWorker.postMessage(input);
 };
 
 (async () => {
-  wasmModule = await wasmBrowserInstantiate("./index.wasm");
-
   document
     .querySelector("#fibonacci_calculator")
     .addEventListener("submit", calculateFib);
